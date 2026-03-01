@@ -1784,8 +1784,14 @@ type CreateJoinTokenRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	ExpirationTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expiration_time,json=expirationTime,proto3" json:"expiration_time,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// MaxUses is the maximum number of machines that can use this token.
+	// 0 means unlimited (default, backward compatible).
+	MaxUses uint32 `protobuf:"varint,3,opt,name=max_uses,json=maxUses,proto3" json:"max_uses,omitempty"`
+	// AllowedMachineUUIDs restricts which machine UUIDs can use this token.
+	// Empty means any machine UUID is allowed (default, backward compatible).
+	AllowedMachineUuids []string `protobuf:"bytes,4,rep,name=allowed_machine_uuids,json=allowedMachineUuids,proto3" json:"allowed_machine_uuids,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *CreateJoinTokenRequest) Reset() {
@@ -1828,6 +1834,20 @@ func (x *CreateJoinTokenRequest) GetName() string {
 func (x *CreateJoinTokenRequest) GetExpirationTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.ExpirationTime
+	}
+	return nil
+}
+
+func (x *CreateJoinTokenRequest) GetMaxUses() uint32 {
+	if x != nil {
+		return x.MaxUses
+	}
+	return 0
+}
+
+func (x *CreateJoinTokenRequest) GetAllowedMachineUuids() []string {
+	if x != nil {
+		return x.AllowedMachineUuids
 	}
 	return nil
 }
@@ -2743,10 +2763,12 @@ const file_omni_management_management_proto_rawDesc = "" +
 	"kernelArgs\x12\x16\n" +
 	"\x06config\x18\x02 \x01(\tR\x06config\",\n" +
 	"\x14GenJoinTokenResponse\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"q\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\xc0\x01\n" +
 	"\x16CreateJoinTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12C\n" +
-	"\x0fexpiration_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0eexpirationTime\")\n" +
+	"\x0fexpiration_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0eexpirationTime\x12\x19\n" +
+	"\bmax_uses\x18\x03 \x01(\rR\amaxUses\x122\n" +
+	"\x15allowed_machine_uuids\x18\x04 \x03(\tR\x13allowedMachineUuids\")\n" +
 	"\x17CreateJoinTokenResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"-\n" +
 	"\x1bResetNodeUniqueTokenRequest\x12\x0e\n" +

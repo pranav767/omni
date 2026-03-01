@@ -219,6 +219,8 @@ export type GenJoinTokenResponse = {
 export type CreateJoinTokenRequest = {
   name?: string
   expiration_time?: GoogleProtobufTimestamp.Timestamp
+  max_uses?: number
+  allowed_machine_uuids?: string[]
 }
 
 export type CreateJoinTokenResponse = {

@@ -1429,6 +1429,21 @@ func joinTokenValidationOptions(st state.State) []validated.StateOption {
 		return nil
 	}
 
+	validateJoinTokenConstraints := func(res *siderolink.JoinToken) error {
+		// Validate allowed_machine_uuids format
+		for _, uuid := range res.TypedSpec().Value.AllowedMachineUuids {
+			if uuid == "" {
+				return errors.New("allowed_machine_uuids cannot contain empty strings")
+			}
+			// Basic UUID format check (8-4-4-4-12 hex digits)
+			if len(uuid) != 36 {
+				return fmt.Errorf("invalid UUID format in allowed_machine_uuids: %s", uuid)
+			}
+		}
+
+		return nil
+	}
+
 	checkDefault := func(ctx context.Context, id string) (bool, error) {
 		defaultJoinToken, err := safe.ReaderGetByID[*siderolink.DefaultJoinToken](ctx, st, siderolink.DefaultJoinTokenID)
 		if err != nil && !state.IsNotFoundError(err) {
@@ -1444,14 +1459,20 @@ func joinTokenValidationOptions(st state.State) []validated.StateOption {
 
 	return []validated.StateOption{
 		validated.WithCreateValidations(validated.NewCreateValidationForType(func(_ context.Context, res *siderolink.JoinToken, _ ...state.CreateOption) error {
-			return validateJoinTokenName(res)
-		})),
-		validated.WithUpdateValidations(validated.NewUpdateValidationForType(func(_ context.Context, old, res *siderolink.JoinToken, _ ...state.UpdateOption) error {
-			if old.TypedSpec().Value.Name == res.TypedSpec().Value.Name {
-				return nil
+			if err := validateJoinTokenName(res); err != nil {
+				return err
 			}
 
-			return validateJoinTokenName(res)
+			return validateJoinTokenConstraints(res)
+		})),
+		validated.WithUpdateValidations(validated.NewUpdateValidationForType(func(_ context.Context, old, res *siderolink.JoinToken, _ ...state.UpdateOption) error {
+			if old.TypedSpec().Value.Name != res.TypedSpec().Value.Name {
+				if err := validateJoinTokenName(res); err != nil {
+					return err
+				}
+			}
+
+			return validateJoinTokenConstraints(res)
 		})),
 		validated.WithDestroyValidations(validated.NewDestroyValidationForType(
 			func(ctx context.Context, _ resource.Pointer, res *siderolink.JoinToken, _ ...state.DestroyOption) error {
