@@ -54,7 +54,7 @@ func NewJoinTokenStatusController() *JoinTokenStatusController {
 
 				joinTokenStatus.TypedSpec().Value.Warnings = nil
 
-				var useCount uint64
+				var useCount uint32
 
 				usages.ForEach(func(res *siderolink.JoinTokenUsage) {
 					if res.TypedSpec().Value.TokenId != joinToken.Metadata().ID() {

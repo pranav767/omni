@@ -1852,6 +1852,20 @@ func (x *CreateJoinTokenRequest) GetAllowedMachineUuids() []string {
 	return nil
 }
 
+func (x *CreateJoinTokenRequest) GetMaxUses() uint32 {
+	if x != nil {
+		return x.MaxUses
+	}
+	return 0
+}
+
+func (x *CreateJoinTokenRequest) GetAllowedMachineUuids() []string {
+	if x != nil {
+		return x.AllowedMachineUuids
+	}
+	return nil
+}
+
 type CreateJoinTokenResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -2764,8 +2778,12 @@ const file_omni_management_management_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\tR\x06config\",\n" +
 	"\x14GenJoinTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"\xc0\x01\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\xc0\x01\n" +
 	"\x16CreateJoinTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12C\n" +
+	"\x0fexpiration_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0eexpirationTime\x12\x19\n" +
+	"\bmax_uses\x18\x03 \x01(\rR\amaxUses\x122\n" +
+	"\x15allowed_machine_uuids\x18\x04 \x03(\tR\x13allowedMachineUuids\")\n" +
 	"\x0fexpiration_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0eexpirationTime\x12\x19\n" +
 	"\bmax_uses\x18\x03 \x01(\rR\amaxUses\x122\n" +
 	"\x15allowed_machine_uuids\x18\x04 \x03(\tR\x13allowedMachineUuids\")\n" +

@@ -4524,7 +4524,7 @@ func (m *JoinTokenStatusSpec) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.UseCount |= uint64(b&0x7F) << shift
+				m.UseCount |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

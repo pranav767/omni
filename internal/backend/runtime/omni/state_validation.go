@@ -1464,14 +1464,24 @@ func joinTokenValidationOptions(st state.State) []validated.StateOption {
 			}
 
 			return validateJoinTokenConstraints(res)
+			if err := validateJoinTokenName(res); err != nil {
+				return err
+			}
+
+			return validateJoinTokenConstraints(res)
 		})),
 		validated.WithUpdateValidations(validated.NewUpdateValidationForType(func(_ context.Context, old, res *siderolink.JoinToken, _ ...state.UpdateOption) error {
 			if old.TypedSpec().Value.Name != res.TypedSpec().Value.Name {
 				if err := validateJoinTokenName(res); err != nil {
 					return err
 				}
+			if old.TypedSpec().Value.Name != res.TypedSpec().Value.Name {
+				if err := validateJoinTokenName(res); err != nil {
+					return err
+				}
 			}
 
+			return validateJoinTokenConstraints(res)
 			return validateJoinTokenConstraints(res)
 		})),
 		validated.WithDestroyValidations(validated.NewDestroyValidationForType(

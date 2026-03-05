@@ -1013,6 +1013,20 @@ func (x *JoinTokenSpec) GetAllowedMachineUuids() []string {
 	return nil
 }
 
+func (x *JoinTokenSpec) GetMaxUses() uint32 {
+	if x != nil {
+		return x.MaxUses
+	}
+	return 0
+}
+
+func (x *JoinTokenSpec) GetAllowedMachineUuids() []string {
+	if x != nil {
+		return x.AllowedMachineUuids
+	}
+	return nil
+}
+
 // JoinTokenStatusSpec is the status of the join token.
 type JoinTokenStatusSpec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1021,7 +1035,7 @@ type JoinTokenStatusSpec struct {
 	// IsDefault is set on the join token which used by default.
 	IsDefault bool `protobuf:"varint,2,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
 	// UseCount is the number of links that are using the join token.
-	UseCount uint64 `protobuf:"varint,3,opt,name=use_count,json=useCount,proto3" json:"use_count,omitempty"`
+	UseCount uint32 `protobuf:"varint,3,opt,name=use_count,json=useCount,proto3" json:"use_count,omitempty"`
 	// ExpirationTime is copied from the JoinTokenSpec.
 	ExpirationTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration_time,json=expirationTime,proto3" json:"expiration_time,omitempty"`
 	// Name is copied from the JoinTokenSpec.
@@ -1078,7 +1092,7 @@ func (x *JoinTokenStatusSpec) GetIsDefault() bool {
 	return false
 }
 
-func (x *JoinTokenStatusSpec) GetUseCount() uint64 {
+func (x *JoinTokenStatusSpec) GetUseCount() uint32 {
 	if x != nil {
 		return x.UseCount
 	}
@@ -1380,6 +1394,7 @@ const file_omni_specs_siderolink_proto_rawDesc = "" +
 	"\tEPHEMERAL\x10\x02\x12\b\n" +
 	"\x04NONE\x10\x03\x12\x0f\n" +
 	"\vUNSUPPORTED\x10\x04\"\xd1\x01\n" +
+	"\vUNSUPPORTED\x10\x04\"\xd1\x01\n" +
 	"\rJoinTokenSpec\x12C\n" +
 	"\x0fexpiration_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x0eexpirationTime\x12\x18\n" +
 	"\arevoked\x18\x02 \x01(\bR\arevoked\x12\x12\n" +
@@ -1390,7 +1405,7 @@ const file_omni_specs_siderolink_proto_rawDesc = "" +
 	"\x05state\x18\x01 \x01(\x0e2 .specs.JoinTokenStatusSpec.StateR\x05state\x12\x1d\n" +
 	"\n" +
 	"is_default\x18\x02 \x01(\bR\tisDefault\x12\x1b\n" +
-	"\tuse_count\x18\x03 \x01(\x04R\buseCount\x12C\n" +
+	"\tuse_count\x18\x03 \x01(\rR\buseCount\x12C\n" +
 	"\x0fexpiration_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x0eexpirationTime\x12\x12\n" +
 	"\x04name\x18\x05 \x01(\tR\x04name\x12>\n" +
 	"\bwarnings\x18\x06 \x03(\v2\".specs.JoinTokenStatusSpec.WarningR\bwarnings\x12\x19\n" +

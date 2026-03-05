@@ -155,7 +155,7 @@ message JoinTokenStatusSpec {
   // IsDefault is set on the join token which used by default.
   bool is_default = 2;
   // UseCount is the number of links that are using the join token.
-  uint64 use_count = 3;
+  uint32 use_count = 3;
   // ExpirationTime is copied from the JoinTokenSpec.
   google.protobuf.Timestamp expiration_time = 4;
   // Name is copied from the JoinTokenSpec.

@@ -103,6 +103,8 @@ export type JoinTokenSpec = {
   expiration_time?: GoogleProtobufTimestamp.Timestamp
   revoked?: boolean
   name?: string
+  max_uses?: number
+  allowed_machine_uuids?: string[]
 }
 
 export type JoinTokenStatusSpecWarning = {
@@ -113,7 +115,7 @@ export type JoinTokenStatusSpecWarning = {
 export type JoinTokenStatusSpec = {
   state?: JoinTokenStatusSpecState
   is_default?: boolean
-  use_count?: string
+  use_count?: number
   expiration_time?: GoogleProtobufTimestamp.Timestamp
   name?: string
   warnings?: JoinTokenStatusSpecWarning[]
