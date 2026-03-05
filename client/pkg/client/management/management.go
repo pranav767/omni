@@ -28,6 +28,25 @@ import (
 // TalosconfigOption is a functional option for Talosconfig.
 type TalosconfigOption func(*management.TalosconfigRequest)
 
+// CreateJoinTokenOption is a functional option for CreateJoinToken.
+type CreateJoinTokenOption func(*management.CreateJoinTokenRequest)
+
+// WithMaxUses sets the maximum number of machines that can use the join token.
+// 0 means unlimited (default).
+func WithMaxUses(maxUses uint32) CreateJoinTokenOption {
+	return func(req *management.CreateJoinTokenRequest) {
+		req.MaxUses = maxUses
+	}
+}
+
+// WithAllowedMachineUUIDs restricts which machine UUIDs can use the join token.
+// Empty means any machine UUID is allowed (default).
+func WithAllowedMachineUUIDs(uuids []string) CreateJoinTokenOption {
+	return func(req *management.CreateJoinTokenRequest) {
+		req.AllowedMachineUuids = uuids
+	}
+}
+
 // WithBreakGlassTalosconfig sets whether the Talosconfig request should return an operator Talosconfig which bypasses Omni.
 func WithBreakGlassTalosconfig(value bool) TalosconfigOption {
 	return func(req *management.TalosconfigRequest) {
@@ -454,16 +473,22 @@ func (client *ClusterClient) KubernetesSyncManifests(ctx context.Context, dryRun
 }
 
 // CreateJoinToken creates a join token and returns it's ID.
-func (client *Client) CreateJoinToken(ctx context.Context, name string, ttl time.Duration) (string, error) {
+func (client *Client) CreateJoinToken(ctx context.Context, name string, ttl time.Duration, opts ...CreateJoinTokenOption) (string, error) {
 	var expirationTime *timestamppb.Timestamp
 	if ttl > 0 {
 		expirationTime = timestamppb.New(time.Now().Add(ttl))
 	}
 
-	resp, err := client.conn.CreateJoinToken(ctx, &management.CreateJoinTokenRequest{
+	req := &management.CreateJoinTokenRequest{
 		Name:           name,
 		ExpirationTime: expirationTime,
-	})
+	}
+
+	for _, opt := range opts {
+		opt(req)
+	}
+
+	resp, err := client.conn.CreateJoinToken(ctx, req)
 	if err != nil {
 		return "", err
 	}

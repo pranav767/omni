@@ -745,4 +745,79 @@ func TestProvision(t *testing.T) {
 		_, err = provisionHandler.Provision(ctx, request)
 		require.Equal(t, codes.PermissionDenied, status.Code(err))
 	})
+
+	t.Run("allowed_machine_uuids enforcement", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, cancel := context.WithTimeout(t.Context(), time.Second*5)
+		defer cancel()
+
+		st, provisionHandler := setup(ctx, t, config.SiderolinkServiceJoinTokensModeStrict)
+
+		restrictedToken, err := jointoken.Generate()
+		require.NoError(t, err)
+
+		tokenRes := siderolinkres.NewJoinToken(restrictedToken)
+		tokenRes.TypedSpec().Value.Name = "restricted"
+		tokenRes.TypedSpec().Value.AllowedMachineUuids = []string{"allowed-machine-uuid"}
+
+		require.NoError(t, st.Create(ctx, tokenRes))
+
+		tokenStatusRes := siderolinkres.NewJoinTokenStatus(restrictedToken)
+		tokenStatusRes.TypedSpec().Value.Name = "restricted"
+		tokenStatusRes.TypedSpec().Value.State = specs.JoinTokenStatusSpec_ACTIVE
+
+		require.NoError(t, st.Create(ctx, tokenStatusRes))
+
+		// Disallowed UUID — should be rejected
+		_, err = provisionHandler.Provision(ctx, &pb.ProvisionRequest{
+			NodeUuid:      "disallowed-uuid",
+			NodePublicKey: genKey(),
+			TalosVersion:  new("v1.9.0"),
+			JoinToken:     new(restrictedToken),
+		})
+		require.Equal(t, codes.PermissionDenied, status.Code(err))
+
+		// Allowed UUID — should succeed
+		_, err = provisionHandler.Provision(ctx, &pb.ProvisionRequest{
+			NodeUuid:      "allowed-machine-uuid",
+			NodePublicKey: genKey(),
+			TalosVersion:  new("v1.9.0"),
+			JoinToken:     new(restrictedToken),
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("exhausted token rejected", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, cancel := context.WithTimeout(t.Context(), time.Second*5)
+		defer cancel()
+
+		st, provisionHandler := setup(ctx, t, config.SiderolinkServiceJoinTokensModeStrict)
+
+		exhaustedToken, err := jointoken.Generate()
+		require.NoError(t, err)
+
+		tokenRes := siderolinkres.NewJoinToken(exhaustedToken)
+		tokenRes.TypedSpec().Value.Name = "exhausted"
+		tokenRes.TypedSpec().Value.MaxUses = 1
+
+		require.NoError(t, st.Create(ctx, tokenRes))
+
+		tokenStatusRes := siderolinkres.NewJoinTokenStatus(exhaustedToken)
+		tokenStatusRes.TypedSpec().Value.Name = "exhausted"
+		tokenStatusRes.TypedSpec().Value.State = specs.JoinTokenStatusSpec_EXHAUSTED
+		tokenStatusRes.TypedSpec().Value.UseCount = 1
+
+		require.NoError(t, st.Create(ctx, tokenStatusRes))
+
+		_, err = provisionHandler.Provision(ctx, &pb.ProvisionRequest{
+			NodeUuid:      "some-machine-uuid",
+			NodePublicKey: genKey(),
+			TalosVersion:  new("v1.9.0"),
+			JoinToken:     new(exhaustedToken),
+		})
+		require.Equal(t, codes.PermissionDenied, status.Code(err))
+	})
 }

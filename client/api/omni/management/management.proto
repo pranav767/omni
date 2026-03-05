@@ -232,6 +232,12 @@ message GenJoinTokenResponse {
 message CreateJoinTokenRequest {
   string name = 1;
   google.protobuf.Timestamp expiration_time = 2;
+  // MaxUses is the maximum number of machines that can use this token.
+  // 0 means unlimited (default).
+  uint32 max_uses = 3;
+  // AllowedMachineUUIDs restricts which machine UUIDs can use this token.
+  // Empty means any machine UUID is allowed (default).
+  repeated string allowed_machine_uuids = 4;
 }
 
 message CreateJoinTokenResponse {

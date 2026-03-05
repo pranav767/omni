@@ -117,3 +117,56 @@ func (suite *JoinTokenStatusSuite) TestReconcile() {
 
 	rtestutils.AssertNoResource[*siderolink.JoinTokenStatus](ctx, suite.T(), suite.state, token.Metadata().ID())
 }
+
+func (suite *JoinTokenStatusSuite) TestExhausted() {
+	ctx, cancel := context.WithTimeout(suite.ctx, time.Second*5)
+	defer cancel()
+
+	suite.startRuntime()
+
+	suite.Require().NoError(suite.runtime.RegisterQController(omnictrl.NewJoinTokenStatusController()))
+
+	token := siderolink.NewJoinToken("token-limited")
+	token.TypedSpec().Value.Name = "limited"
+	token.TypedSpec().Value.MaxUses = 2
+
+	suite.Require().NoError(suite.state.Create(ctx, token))
+
+	rtestutils.AssertResources(ctx, suite.T(), suite.state, []string{token.Metadata().ID()},
+		func(res *siderolink.JoinTokenStatus, assert *assert.Assertions) {
+			assert.Equal(specs.JoinTokenStatusSpec_ACTIVE, res.TypedSpec().Value.State)
+			assert.Equal(uint64(0), res.TypedSpec().Value.UseCount)
+			assert.Equal(uint32(2), res.TypedSpec().Value.MaxUses)
+		},
+	)
+
+	// First usage — still ACTIVE
+	usage1 := siderolink.NewJoinTokenUsage("machine-1")
+	usage1.TypedSpec().Value.TokenId = token.Metadata().ID()
+
+	suite.Require().NoError(suite.state.Create(ctx, usage1))
+
+	rtestutils.AssertResources(ctx, suite.T(), suite.state, []string{token.Metadata().ID()},
+		func(res *siderolink.JoinTokenStatus, assert *assert.Assertions) {
+			assert.Equal(specs.JoinTokenStatusSpec_ACTIVE, res.TypedSpec().Value.State)
+			assert.Equal(uint64(1), res.TypedSpec().Value.UseCount)
+		},
+	)
+
+	// Second usage — now EXHAUSTED
+	usage2 := siderolink.NewJoinTokenUsage("machine-2")
+	usage2.TypedSpec().Value.TokenId = token.Metadata().ID()
+
+	suite.Require().NoError(suite.state.Create(ctx, usage2))
+
+	rtestutils.AssertResources(ctx, suite.T(), suite.state, []string{token.Metadata().ID()},
+		func(res *siderolink.JoinTokenStatus, assert *assert.Assertions) {
+			assert.Equal(specs.JoinTokenStatusSpec_EXHAUSTED, res.TypedSpec().Value.State)
+			assert.Equal(uint64(2), res.TypedSpec().Value.UseCount)
+		},
+	)
+
+	rtestutils.DestroyAll[*siderolink.JoinToken](ctx, suite.T(), suite.state)
+
+	rtestutils.AssertNoResource[*siderolink.JoinTokenStatus](ctx, suite.T(), suite.state, token.Metadata().ID())
+}

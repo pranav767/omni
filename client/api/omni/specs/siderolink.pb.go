@@ -81,10 +81,11 @@ func (NodeUniqueTokenStatusSpec_State) EnumDescriptor() ([]byte, []int) {
 type JoinTokenStatusSpec_State int32
 
 const (
-	JoinTokenStatusSpec_UNKNOWN JoinTokenStatusSpec_State = 0
-	JoinTokenStatusSpec_ACTIVE  JoinTokenStatusSpec_State = 1
-	JoinTokenStatusSpec_REVOKED JoinTokenStatusSpec_State = 2
-	JoinTokenStatusSpec_EXPIRED JoinTokenStatusSpec_State = 3
+	JoinTokenStatusSpec_UNKNOWN   JoinTokenStatusSpec_State = 0
+	JoinTokenStatusSpec_ACTIVE    JoinTokenStatusSpec_State = 1
+	JoinTokenStatusSpec_REVOKED   JoinTokenStatusSpec_State = 2
+	JoinTokenStatusSpec_EXPIRED   JoinTokenStatusSpec_State = 3
+	JoinTokenStatusSpec_EXHAUSTED JoinTokenStatusSpec_State = 4
 )
 
 // Enum value maps for JoinTokenStatusSpec_State.
@@ -94,12 +95,14 @@ var (
 		1: "ACTIVE",
 		2: "REVOKED",
 		3: "EXPIRED",
+		4: "EXHAUSTED",
 	}
 	JoinTokenStatusSpec_State_value = map[string]int32{
-		"UNKNOWN": 0,
-		"ACTIVE":  1,
-		"REVOKED": 2,
-		"EXPIRED": 3,
+		"UNKNOWN":   0,
+		"ACTIVE":    1,
+		"REVOKED":   2,
+		"EXPIRED":   3,
+		"EXHAUSTED": 4,
 	}
 )
 
@@ -934,9 +937,15 @@ type JoinTokenSpec struct {
 	// Revoked allows to revoke the token before it expires.
 	Revoked bool `protobuf:"varint,2,opt,name=revoked,proto3" json:"revoked,omitempty"`
 	// Name is the human readable join token description.
-	Name          string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// MaxUses is the maximum number of machines that can use this token.
+	// 0 means unlimited (default).
+	MaxUses uint32 `protobuf:"varint,4,opt,name=max_uses,json=maxUses,proto3" json:"max_uses,omitempty"`
+	// AllowedMachineUUIDs restricts which machine UUIDs can use this token.
+	// Empty means any machine UUID is allowed (default).
+	AllowedMachineUuids []string `protobuf:"bytes,5,rep,name=allowed_machine_uuids,json=allowedMachineUuids,proto3" json:"allowed_machine_uuids,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *JoinTokenSpec) Reset() {
@@ -990,6 +999,20 @@ func (x *JoinTokenSpec) GetName() string {
 	return ""
 }
 
+func (x *JoinTokenSpec) GetMaxUses() uint32 {
+	if x != nil {
+		return x.MaxUses
+	}
+	return 0
+}
+
+func (x *JoinTokenSpec) GetAllowedMachineUuids() []string {
+	if x != nil {
+		return x.AllowedMachineUuids
+	}
+	return nil
+}
+
 // JoinTokenStatusSpec is the status of the join token.
 type JoinTokenStatusSpec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1004,7 +1027,9 @@ type JoinTokenStatusSpec struct {
 	// Name is copied from the JoinTokenSpec.
 	Name string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	// Warnings keeps the list of machines which might be broken if the token is revoked.
-	Warnings      []*JoinTokenStatusSpec_Warning `protobuf:"bytes,6,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Warnings []*JoinTokenStatusSpec_Warning `protobuf:"bytes,6,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	// MaxUses is copied from the JoinTokenSpec for display purposes.
+	MaxUses       uint32 `protobuf:"varint,7,opt,name=max_uses,json=maxUses,proto3" json:"max_uses,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1079,6 +1104,13 @@ func (x *JoinTokenStatusSpec) GetWarnings() []*JoinTokenStatusSpec_Warning {
 		return x.Warnings
 	}
 	return nil
+}
+
+func (x *JoinTokenStatusSpec) GetMaxUses() uint32 {
+	if x != nil {
+		return x.MaxUses
+	}
+	return 0
 }
 
 // JoinTokenUsageSpec creates a mapping that connects links and join tokens.
@@ -1347,11 +1379,13 @@ const file_omni_specs_siderolink_proto_rawDesc = "" +
 	"PERSISTENT\x10\x01\x12\r\n" +
 	"\tEPHEMERAL\x10\x02\x12\b\n" +
 	"\x04NONE\x10\x03\x12\x0f\n" +
-	"\vUNSUPPORTED\x10\x04\"\x82\x01\n" +
+	"\vUNSUPPORTED\x10\x04\"\xd1\x01\n" +
 	"\rJoinTokenSpec\x12C\n" +
 	"\x0fexpiration_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x0eexpirationTime\x12\x18\n" +
 	"\arevoked\x18\x02 \x01(\bR\arevoked\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\"\x9d\x03\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x19\n" +
+	"\bmax_uses\x18\x04 \x01(\rR\amaxUses\x122\n" +
+	"\x15allowed_machine_uuids\x18\x05 \x03(\tR\x13allowedMachineUuids\"\xc7\x03\n" +
 	"\x13JoinTokenStatusSpec\x126\n" +
 	"\x05state\x18\x01 \x01(\x0e2 .specs.JoinTokenStatusSpec.StateR\x05state\x12\x1d\n" +
 	"\n" +
@@ -1359,16 +1393,18 @@ const file_omni_specs_siderolink_proto_rawDesc = "" +
 	"\tuse_count\x18\x03 \x01(\x04R\buseCount\x12C\n" +
 	"\x0fexpiration_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x0eexpirationTime\x12\x12\n" +
 	"\x04name\x18\x05 \x01(\tR\x04name\x12>\n" +
-	"\bwarnings\x18\x06 \x03(\v2\".specs.JoinTokenStatusSpec.WarningR\bwarnings\x1a=\n" +
+	"\bwarnings\x18\x06 \x03(\v2\".specs.JoinTokenStatusSpec.WarningR\bwarnings\x12\x19\n" +
+	"\bmax_uses\x18\a \x01(\rR\amaxUses\x1a=\n" +
 	"\aWarning\x12\x18\n" +
 	"\amachine\x18\x01 \x01(\tR\amachine\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\":\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"I\n" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\n" +
 	"\n" +
 	"\x06ACTIVE\x10\x01\x12\v\n" +
 	"\aREVOKED\x10\x02\x12\v\n" +
-	"\aEXPIRED\x10\x03\"/\n" +
+	"\aEXPIRED\x10\x03\x12\r\n" +
+	"\tEXHAUSTED\x10\x04\"/\n" +
 	"\x12JoinTokenUsageSpec\x12\x19\n" +
 	"\btoken_id\x18\x01 \x01(\tR\atokenId\"1\n" +
 	"\x14DefaultJoinTokenSpec\x12\x19\n" +

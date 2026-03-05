@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"slices"
 	"strings"
 	"time"
 
@@ -574,6 +575,24 @@ func (h *ProvisionHandler) buildProvisionContext(ctx context.Context, req *pb.Pr
 	requestJoinToken, err = h.getJoinToken(ctx, req.GetJoinToken())
 	if err != nil {
 		return nil, err
+	}
+
+	if requestJoinToken != nil {
+		var joinTokenRes *siderolinkres.JoinToken
+
+		joinTokenRes, err = safe.ReaderGetByID[*siderolinkres.JoinToken](ctx, h.state, req.GetJoinToken())
+		if err != nil && !state.IsNotFoundError(err) {
+			return nil, err
+		}
+
+		if joinTokenRes != nil && len(joinTokenRes.TypedSpec().Value.AllowedMachineUuids) > 0 {
+			if !slices.Contains(joinTokenRes.TypedSpec().Value.AllowedMachineUuids, req.NodeUuid) {
+				h.logger.Warn("machine join token rejected: machine UUID not in allowed list",
+					zap.String("machine", req.NodeUuid))
+
+				requestJoinToken = nil
+			}
+		}
 	}
 
 	talosVersion := "1.5.0"

@@ -774,6 +774,8 @@ func (s *managementServer) CreateJoinToken(ctx context.Context, request *managem
 
 	joinToken.TypedSpec().Value.Name = request.Name
 	joinToken.TypedSpec().Value.ExpirationTime = request.ExpirationTime
+	joinToken.TypedSpec().Value.MaxUses = request.MaxUses
+	joinToken.TypedSpec().Value.AllowedMachineUuids = request.AllowedMachineUuids
 
 	if err = s.omniState.Create(actor.MarkContextAsInternalActor(ctx), joinToken); err != nil {
 		return nil, err

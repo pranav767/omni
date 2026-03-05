@@ -268,6 +268,12 @@ func (m *JoinTokenSpec) CloneVT() *JoinTokenSpec {
 	r.ExpirationTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ExpirationTime).CloneVT())
 	r.Revoked = m.Revoked
 	r.Name = m.Name
+	r.MaxUses = m.MaxUses
+	if rhs := m.AllowedMachineUuids; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.AllowedMachineUuids = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -307,6 +313,7 @@ func (m *JoinTokenStatusSpec) CloneVT() *JoinTokenStatusSpec {
 	r.UseCount = m.UseCount
 	r.ExpirationTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ExpirationTime).CloneVT())
 	r.Name = m.Name
+	r.MaxUses = m.MaxUses
 	if rhs := m.Warnings; rhs != nil {
 		tmpContainer := make([]*JoinTokenStatusSpec_Warning, len(rhs))
 		for k, v := range rhs {
@@ -715,6 +722,18 @@ func (this *JoinTokenSpec) EqualVT(that *JoinTokenSpec) bool {
 	if this.Name != that.Name {
 		return false
 	}
+	if this.MaxUses != that.MaxUses {
+		return false
+	}
+	if len(this.AllowedMachineUuids) != len(that.AllowedMachineUuids) {
+		return false
+	}
+	for i, vx := range this.AllowedMachineUuids {
+		vy := that.AllowedMachineUuids[i]
+		if vx != vy {
+			return false
+		}
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -784,6 +803,9 @@ func (this *JoinTokenStatusSpec) EqualVT(that *JoinTokenStatusSpec) bool {
 				return false
 			}
 		}
+	}
+	if this.MaxUses != that.MaxUses {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1581,6 +1603,20 @@ func (m *JoinTokenSpec) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.AllowedMachineUuids) > 0 {
+		for iNdEx := len(m.AllowedMachineUuids) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.AllowedMachineUuids[iNdEx])
+			copy(dAtA[i:], m.AllowedMachineUuids[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.AllowedMachineUuids[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
+	if m.MaxUses != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxUses))
+		i--
+		dAtA[i] = 0x20
+	}
 	if len(m.Name) > 0 {
 		i -= len(m.Name)
 		copy(dAtA[i:], m.Name)
@@ -1687,6 +1723,11 @@ func (m *JoinTokenStatusSpec) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.MaxUses != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxUses))
+		i--
+		dAtA[i] = 0x38
 	}
 	if len(m.Warnings) > 0 {
 		for iNdEx := len(m.Warnings) - 1; iNdEx >= 0; iNdEx-- {
@@ -2159,6 +2200,15 @@ func (m *JoinTokenSpec) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.MaxUses != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxUses))
+	}
+	if len(m.AllowedMachineUuids) > 0 {
+		for _, s := range m.AllowedMachineUuids {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -2209,6 +2259,9 @@ func (m *JoinTokenStatusSpec) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.MaxUses != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxUses))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -4201,6 +4254,57 @@ func (m *JoinTokenSpec) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxUses", wireType)
+			}
+			m.MaxUses = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxUses |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllowedMachineUuids", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AllowedMachineUuids = append(m.AllowedMachineUuids, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4527,6 +4631,25 @@ func (m *JoinTokenStatusSpec) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxUses", wireType)
+			}
+			m.MaxUses = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxUses |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -130,6 +130,10 @@ func NewJoinTokenStatusController() *JoinTokenStatusController {
 					joinTokenStatus.TypedSpec().Value.State = specs.JoinTokenStatusSpec_EXPIRED
 
 					joinTokenStatus.Metadata().Labels().Delete(auth.LabelTokenActive)
+				case joinToken.TypedSpec().Value.MaxUses > 0 && useCount >= uint64(joinToken.TypedSpec().Value.MaxUses):
+					joinTokenStatus.TypedSpec().Value.State = specs.JoinTokenStatusSpec_EXHAUSTED
+
+					joinTokenStatus.Metadata().Labels().Delete(auth.LabelTokenActive)
 				default:
 					joinTokenStatus.TypedSpec().Value.State = specs.JoinTokenStatusSpec_ACTIVE
 
@@ -137,6 +141,7 @@ func NewJoinTokenStatusController() *JoinTokenStatusController {
 				}
 
 				joinTokenStatus.TypedSpec().Value.UseCount = useCount
+				joinTokenStatus.TypedSpec().Value.MaxUses = joinToken.TypedSpec().Value.MaxUses
 				joinTokenStatus.TypedSpec().Value.ExpirationTime = joinToken.TypedSpec().Value.ExpirationTime
 				joinTokenStatus.TypedSpec().Value.Name = joinToken.TypedSpec().Value.Name
 

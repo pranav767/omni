@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/siderolabs/omni/client/pkg/client"
+	"github.com/siderolabs/omni/client/pkg/client/management"
 	"github.com/siderolabs/omni/client/pkg/omni/resources/siderolink"
 	"github.com/siderolabs/omni/client/pkg/omnictl/internal/access"
 )
@@ -30,8 +31,10 @@ var (
 	joinTokenCreateFlags struct {
 		role string
 
-		useUserRole bool
-		ttl         time.Duration
+		useUserRole  bool
+		ttl          time.Duration
+		maxUses      uint
+		allowedUUIDs []string
 	}
 
 	joinTokenRenewFlags struct {
@@ -69,7 +72,17 @@ var (
 			name := args[0]
 
 			return access.WithClient(func(ctx context.Context, client *client.Client) error {
-				token, err := client.Management().CreateJoinToken(ctx, name, joinTokenCreateFlags.ttl)
+				var opts []management.CreateJoinTokenOption
+
+				if joinTokenCreateFlags.maxUses > 0 {
+					opts = append(opts, management.WithMaxUses(uint32(joinTokenCreateFlags.maxUses)))
+				}
+
+				if len(joinTokenCreateFlags.allowedUUIDs) > 0 {
+					opts = append(opts, management.WithAllowedMachineUUIDs(joinTokenCreateFlags.allowedUUIDs))
+				}
+
+				token, err := client.Management().CreateJoinToken(ctx, name, joinTokenCreateFlags.ttl, opts...)
 				if err != nil {
 					return err
 				}
@@ -271,7 +284,7 @@ var (
 
 				writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 
-				fmt.Fprintf(writer, "ID\tNAME\tSTATE\tEXPIRATION\tUSE COUNT\tDEFAULT\n") //nolint:errcheck
+				fmt.Fprintf(writer, "ID\tNAME\tSTATE\tEXPIRATION\tUSE COUNT\tMAX USES\tDEFAULT\n") //nolint:errcheck
 
 				for token := range joinTokens.All() {
 					var isDefault string
@@ -286,14 +299,21 @@ var (
 						expirationTime = token.TypedSpec().Value.ExpirationTime.AsTime().String()
 					}
 
+					maxUses := "unlimited"
+
+					if token.TypedSpec().Value.MaxUses > 0 {
+						maxUses = fmt.Sprintf("%d", token.TypedSpec().Value.MaxUses)
+					}
+
 					if _, err = fmt.Fprintf(
 						writer,
-						"%s\t%s\t%s\t%s\t%d\t%s\n",
+						"%s\t%s\t%s\t%s\t%d\t%s\t%s\n",
 						token.Metadata().ID(),
 						token.TypedSpec().Value.Name,
 						token.TypedSpec().Value.State.String(),
 						expirationTime,
 						token.TypedSpec().Value.UseCount,
+						maxUses,
 						isDefault,
 					); err != nil {
 						return err
@@ -374,6 +394,8 @@ func init() {
 	joinTokenDeleteCmd.Flags().BoolVarP(&joinTokenDeleteFlags.force, "force", "f", false, "Delete the token even if it is going to make the machines to disconnect")
 
 	joinTokenCreateCmd.Flags().DurationVarP(&joinTokenCreateFlags.ttl, "ttl", "t", 0, "TTL for the join token")
+	joinTokenCreateCmd.Flags().UintVar(&joinTokenCreateFlags.maxUses, "max-uses", 0, "Maximum number of machines that can use this token (0 means unlimited)")
+	joinTokenCreateCmd.Flags().StringSliceVar(&joinTokenCreateFlags.allowedUUIDs, "allowed-uuids", nil, "Comma-separated list of machine UUIDs allowed to use this token")
 
 	joinTokenRenewCmd.Flags().DurationVarP(&joinTokenRenewFlags.ttl, "ttl", "t", 0, "TTL for the join token")
 

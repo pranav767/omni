@@ -18,6 +18,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/cosi-project/runtime/pkg/resource"
+	"github.com/google/uuid"
 	"github.com/cosi-project/runtime/pkg/safe"
 	"github.com/cosi-project/runtime/pkg/state"
 	"github.com/hashicorp/go-multierror"
@@ -1429,6 +1430,20 @@ func joinTokenValidationOptions(st state.State) []validated.StateOption {
 		return nil
 	}
 
+	validateJoinTokenConstraints := func(res *siderolink.JoinToken) error {
+		for _, machineUUID := range res.TypedSpec().Value.AllowedMachineUuids {
+			if machineUUID == "" {
+				return errors.New("allowed_machine_uuids cannot contain empty strings")
+			}
+
+			if _, err := uuid.Parse(machineUUID); err != nil {
+				return fmt.Errorf("invalid UUID in allowed_machine_uuids %q: %w", machineUUID, err)
+			}
+		}
+
+		return nil
+	}
+
 	checkDefault := func(ctx context.Context, id string) (bool, error) {
 		defaultJoinToken, err := safe.ReaderGetByID[*siderolink.DefaultJoinToken](ctx, st, siderolink.DefaultJoinTokenID)
 		if err != nil && !state.IsNotFoundError(err) {
@@ -1444,14 +1459,20 @@ func joinTokenValidationOptions(st state.State) []validated.StateOption {
 
 	return []validated.StateOption{
 		validated.WithCreateValidations(validated.NewCreateValidationForType(func(_ context.Context, res *siderolink.JoinToken, _ ...state.CreateOption) error {
-			return validateJoinTokenName(res)
-		})),
-		validated.WithUpdateValidations(validated.NewUpdateValidationForType(func(_ context.Context, old, res *siderolink.JoinToken, _ ...state.UpdateOption) error {
-			if old.TypedSpec().Value.Name == res.TypedSpec().Value.Name {
-				return nil
+			if err := validateJoinTokenName(res); err != nil {
+				return err
 			}
 
-			return validateJoinTokenName(res)
+			return validateJoinTokenConstraints(res)
+		})),
+		validated.WithUpdateValidations(validated.NewUpdateValidationForType(func(_ context.Context, old, res *siderolink.JoinToken, _ ...state.UpdateOption) error {
+			if old.TypedSpec().Value.Name != res.TypedSpec().Value.Name {
+				if err := validateJoinTokenName(res); err != nil {
+					return err
+				}
+			}
+
+			return validateJoinTokenConstraints(res)
 		})),
 		validated.WithDestroyValidations(validated.NewDestroyValidationForType(
 			func(ctx context.Context, _ resource.Pointer, res *siderolink.JoinToken, _ ...state.DestroyOption) error {
